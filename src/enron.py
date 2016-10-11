@@ -1,8 +1,9 @@
-# Use this module to read the enron spam data
+# Use this module to read the enron email data
 
 import os
 import pickle
 from itertools import chain
+import random
 
 import nltk
 from nltk import tokenize
@@ -10,6 +11,10 @@ import numpy as np
 
 ENRON_PATH = 'data/Enron/'
 CACHE_PATH = 'data/cache/'
+
+# Create these folders if they do not exist
+os.makedirs(ENRON_PATH, exist_ok=True)
+os.makedirs(CACHE_PATH, exist_ok=True)
 
 def load_text(enron_id, cache=True):
     """
@@ -45,22 +50,30 @@ def load_text(enron_id, cache=True):
     spam = []
 
     ham_path = ENRON_PATH+'enron{}/ham/'.format(enron_id)
-    for filepath in os.listdir(ham_path):
-        try:
-            with open(ham_path+filepath, 'r') as fd:
-                txt = fd.read()
-                ham.append(txt)
-        except UnicodeDecodeError:
-            print('utf-8 error. Skipping file {}'.format(ham_path+filepath))
+    try:
+        for filepath in os.listdir(ham_path):
+            try:
+                with open(ham_path+filepath, 'r') as fd:
+                    txt = fd.read()
+                    ham.append(txt)
+            except UnicodeDecodeError:
+                print('utf-8 error. Skipping file {}'.format(ham_path+filepath))
+    except FileNotFoundError:
+        print('No enron ham dataset found for id {}'.format(enron_id))
+        raise
 
     spam_path = ENRON_PATH+'enron{}/spam/'.format(enron_id)
-    for filepath in os.listdir(spam_path):
-        try:
-            with open(spam_path+filepath, 'r') as fd:
-                txt = fd.read()
-                spam.append(txt)
-        except UnicodeDecodeError:
-            print('utf-8 error. Skipping file {}'.format(spam_path+filepath))
+    try:
+        for filepath in os.listdir(spam_path):
+            try:
+                with open(spam_path+filepath, 'r') as fd:
+                    txt = fd.read()
+                    spam.append(txt)
+            except UnicodeDecodeError:
+                print('utf-8 error. Skipping file {}'.format(spam_path+filepath))
+    except FileNotFoundError:
+        print('No enron spam dataset found for id {}'.format(enron_id))
+        raise
 
     if cache:
         with open(cache_path, 'wb') as fd:
@@ -68,7 +81,7 @@ def load_text(enron_id, cache=True):
 
     return (ham, spam)
 
-def most_freq_words(all_text, n=100):
+def most_freq_words(all_text, n):
     """
     Given a iterable (or list) of strings, this functions returns a list
     of the `n` most frequent words. Use `itertools.chain` to combine
@@ -82,12 +95,12 @@ def most_freq_words(all_text, n=100):
     returns:
     A list containing `n` words: the most frequent ones in the text.
     If `n` is lesser than the number of unique words in the text, all
-    the words in the text are returned
+    the words in the text are returned. The returned list is sorted.
     """
 
     freq_dist = nltk.FreqDist()
 
-    for text in all_text:
+    for i,text in enumerate(all_text):
         words = tokenize.word_tokenize(text)
 
         l_words = [w.lower() for w in words
@@ -172,7 +185,30 @@ def shared(batch):
         borrow=True)
     return shared_X, shared_Y
 
-def load_vectorized(enron_ids, n, shuffle=False, cache=True, theano_shared=True):
+def shuffle_xy(X, Y):
+    """
+    Shuffles the rows of X and Y, ensuring that every row
+    points to its actual class label in Y. Shuffling is done
+    in place.
+
+    params:
+    X : An ndarray
+    Y : An ndarray
+    X and Y must have the same number of rows
+
+    returns:
+    X,Y : Shuffled ndarrays
+    """
+    n = X.shape[0]
+    for i in range(n):
+        j = random.randint(0, n-1)
+
+        # Swapping two rows in numpy
+        X[[i,j]] = X[[j,i]]
+        Y[[i,j]] = Y[[j,i]]
+    return X, Y
+
+def load_enron_vectorized(enron_ids, n, shuffle=False, cache=True, theano_shared=True):
     """
     Completely load the email dataset for all the ids in `enron_ids`.
     `n` is the number of words to consider for `most_freq_words`.
@@ -181,7 +217,6 @@ def load_vectorized(enron_ids, n, shuffle=False, cache=True, theano_shared=True)
     * Call `load_text` for every id in `enron_ids`
     * Call `most_freq_words` on the COMBINED text collected
     * Vectorize the text and classes
-    * Use `np.vstack` to combine all the loaded data
     * OPTIONALLY cache the loaded data
     * OPTIONALLY shuffle the rows around
     * OPTIONALLY return a theano shared version of the data instead of
@@ -203,7 +238,6 @@ def load_vectorized(enron_ids, n, shuffle=False, cache=True, theano_shared=True)
     is the vectorized classes. If theano_shared is True, a theano
     shared version of the tuple is returned
     """
-    #TODO: Why is this function so slow?
 
     cache_path = CACHE_PATH+'enron_vec_{}_{}'.format(
                  ''.join(map(str, enron_ids)), n)
@@ -214,7 +248,7 @@ def load_vectorized(enron_ids, n, shuffle=False, cache=True, theano_shared=True)
     else:
         enrons = [load_text(enron_id, cache=cache) for enron_id in enron_ids]
         flattened_enron = chain.from_iterable(chain.from_iterable(enrons))
-        mfw = most_freq_words(flattened_enron)
+        mfw = most_freq_words(flattened_enron, n)
 
         count = sum((len(h)+len(s) for h,s in enrons)) #number of emails
 
@@ -236,9 +270,9 @@ def load_vectorized(enron_ids, n, shuffle=False, cache=True, theano_shared=True)
                 pickle.dump((X,Y), fd)
 
     if shuffle:
-        pass
+        shuffle_xy(X, Y)
 
     if theano_shared:
-        pass
+        X, Y = shared((X, Y))
 
     return X,Y
