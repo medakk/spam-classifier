@@ -8,27 +8,20 @@ import enron
 def block_input():
     """
     Reads user input into a string until the user
-    enters two continuous empty lines.
+    presses Ctrl+C
 
     returns:
     The string read
     """
 
     text = ''
-    last_line_empty = False
-    while True:
-        print(' >', end=' ')
-        line = input().strip()
-        if line=='':
-            if last_line_empty:
-                return text
-            else:
-                last_line_empty = True
-        else:
-            last_line_empty = False
-        text = text + '\n' + line
-
-    return text
+    try:
+        while True:
+            print(' >', end=' ')
+            line = input().strip()
+            text = text + '\n' + line
+    except KeyboardInterrupt:
+        return text
 
 def load_mfw(enron_ids, n):
     cache_path = 'data/cache/enron_mfw_{}_{}'.format(''.join(map(str,enron_ids)), n)
@@ -108,9 +101,9 @@ def interactive_session():
                 net.SGD(training_data, epochs, eta, mini_batch_size, test_data)
                 print()
             elif choice==2:
-                print('\nEnter text. Enter two blank lines to exit.')
+                print('\nEnter text. Press Ctrl+C to end the message')
                 text = block_input()
-                print('--------')
+                print('\n------------')
 
                 if mfw is None:
                     mfw = load_mfw(enron_ids, n)
