@@ -10,7 +10,45 @@ The training data and test data are 75% and 25% respectively of the loaded corpu
 The [NLTK](https://pypi.python.org/pypi/nltk) library is used to tokenize and create a frequency distribution of the words in the corpus. [Theano](https://pypi.python.org/pypi/Theano) is used to build a computational graph of the network and run it. The theano-specific code in this program is based on [Michael Nielsen's book](http://neuralnetworksanddeeplearning.com/) on Deep Learning.
 
 ### Obtaining the data
-The instructions for obtaining the data will be added to the repo soon.
+[Download the preprocessed Enron spam data from here](http://www.aueb.gr/users/ion/data/enron-spam/). (Thanks to Ion for letting me use this!)  
+Download Enron1, Enron2, Enron3, Enron4, Enron5 and Enron6. Extract them to `data/Enron/`. The folder tree should look like this:  
+```
+├── data
+│   ├── cache
+│   └── Enron
+│       ├── enron1
+│       │   ├── ham
+│       │   ├── spam
+│       │   └── Summary.txt
+│       ├── enron2
+│       │   ├── ham
+│       │   ├── spam
+│       │   └── Summary.txt
+│       ├── enron3
+│       │   ├── ham
+│       │   ├── spam
+│       │   └── Summary.txt
+│       ├── enron4
+│       │   ├── ham
+│       │   ├── spam
+│       │   └── Summary.txt
+│       ├── enron5
+│       │   ├── ham
+│       │   ├── spam
+│       │   └── Summary.txt
+│       └── enron6
+│           ├── ham
+│           ├── spam
+│           └── Summary.txt
+├── LICENSE
+├── README.md
+└── src
+    ├── enron.py
+    ├── neural.py
+    └── spam_classify.py
+
+```
+
 
 ### Running the program
 Run
