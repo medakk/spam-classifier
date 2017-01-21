@@ -53,7 +53,7 @@ Download Enron1, Enron2, Enron3, Enron4, Enron5 and Enron6. Extract them to `dat
 ### Running the program
 Run
 ```
-python src/spam_classifier.py
+python src/spam_classify.py
 ```
 An interactive session opens, where you can train and check the accuracy of the model, or enter custom text to test the model. Currently, the only way to modify the model(ie: add new layers, change the activation function, etc.) is to edit the source for this file.
 
